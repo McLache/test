@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Layout</title>
+    <link rel="stylesheet" href="http://test.res.easy-hi.cn/yoga-res/admin/common/css/bootstrap.min.css"/>
+    <meta name="viewport"
+          content="initial-scale=1.0,user-scalable=no,maximum-scale=1.0,minimum-scale=1.0,width=device-width"/>
+    <script src="http://test.res.easy-hi.cn/yoga-res/admin/common/js/jquery-2.1.1.js"></script>
+    <script src="http://test.res.easy-hi.cn/yoga-res/admin/common/js/index.js"></script>
+    <link rel="stylesheet" th:href="@{/css/index.css}" href="../static/css/index.css"/>
+    <script src="../static/js/jweixin-1.0.0.js" th:src="@{/js/jweixin-1.0.0.js}"></script>
+</head>
+
+<body>
+<div class="head-container">
+    <div class="merchant-title">奕起嗨</div>
+</div>
+
+<div class="input-filed">
+    请输入金额: <input type="text" class="input-item"/>￥
+</div>
+<div class="confirm-pay" id="confirm">确认支付</div>
+</body>
+<script th:inline="javascript">
+    wx.config({
+        debug: false,
+        appId: [[${jsapiWxConfig.appId}]],
+        timeStamp: [[${jsapiWxConfig.timestamp}]],
+        nonceStr: [[${jsapiWxConfig.nonceStr}]],
+        signature: [[${jsapiWxConfig.signature}]],
+        jsApiList: [
+            'checkJsApi',
+            'onMenuShareTimeline',
+            'onMenuShareAppMessage',
+            'onMenuShareQQ',
+            'onMenuShareWeibo',
+            'hideMenuItems',
+            'showMenuItems',
+            'hideAllNonBaseMenuItem',
+            'showAllNonBaseMenuItem',
+            'translateVoice',
+            'startRecord',
+            'stopRecord',
+            'onRecordEnd',
+            'playVoice',
+            'pauseVoice',
+            'stopVoice',
+            'uploadVoice',
+            'downloadVoice',
+            'chooseImage',
+            'previewImage',
+            'uploadImage',
+            'downloadImage',
+            'getNetworkType',
+            'openLocation',
+            'getLocation',
+            'hideOptionMenu',
+            'showOptionMenu',
+            'closeWindow',
+            'scanQRCode',
+            'chooseWXPay',
+            'openProductSpecificView',
+            'addCard',
+            'chooseCard',
+            'openCard'
+        ]
+    });
+    wx.ready(function () {
+        wx.hideAllNonBaseMenuItem();
+    });
+</script>
+<script type="text/javascript">
+    $(function () {
+        $("#confirm").on("click", function () {
+            var totalFee = $(".input-item").val();
+            $.ajax({
+                type: "POST",
+                url: "/cp/wx-pay/pay-start",
+                data: {totalFee: totalFee},
+                success: function (res) {
+                    if (res != null) {
+                        WeixinJSBridge.invoke('getBrandWCPayRequest', {
+                                    "appId": res.appId,
+                                    "timeStamp": res.timeStamp + "", // 支付签名时间戳，注意微信jssdk中的所有使用timestamp字段均为小写。但最新版的支付后台生成签名使用的timeStamp字段名需大写其中的S字符
+                                    "nonceStr": res.nonceStr, // 支付签名随机串，不长于 32 位
+                                    "package": res.prepayId, // 统一支付接口返回的prepay_id参数值，提交格式如：prepay_id=***）
+                                    "signType": res.signType, // 签名方式，默认为'SHA1'，使用新版支付需传入'MD5'
+                                    "paySign": res.paySign, // 支付签名
+                                },
+                                function (res) {
+                                    if (res.err_msg == "get_brand_wcpay_request:ok") {
+                                        alert("支付成功!")
+                                    }
+                                }
+                        );
+                    }
+                }
+            });
+        })
+    });
+</script>
+</html>
